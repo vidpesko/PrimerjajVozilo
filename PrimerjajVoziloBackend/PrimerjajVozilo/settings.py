@@ -10,9 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 import sentry_sdk
+
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 # sentry_sdk.init(
@@ -102,11 +109,11 @@ WSGI_APPLICATION = "PrimerjajVozilo.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "PrimerjajVozilo",
-        "USER": "root",
-        "PASSWORD": "WordGesloVid123",
-        "HOST": "localhost",
-        "PORT": "3306",
+        "NAME": os.getenv("MYSQL_DB_NAME"),
+        "USER": os.getenv("MYSQL_DB_USER"),
+        "PASSWORD": os.getenv("MYSQL_DB_PASSWORD"),
+        "HOST": os.getenv("MYSQL_DB_HOST"),
+        "PORT": os.getenv("MYSQL_DB_PORT"),
     }
 }
 

@@ -8,3 +8,4 @@ lxml
 pydantic
 
 sentry-sdk
+python-dotenv
