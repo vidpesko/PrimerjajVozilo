@@ -1,0 +1,10 @@
+django
+djangorestframework
+mysqlclient
+
+nodriver
+beautifulsoup4
+lxml
+pydantic
+
+sentry-sdk
