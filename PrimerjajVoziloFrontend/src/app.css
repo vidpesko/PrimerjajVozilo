@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .add-vehicle-btn-icon {
+        @apply flex items-center justify-center shadow-xl rounded-3xl cursor-pointer w-10 h-10 bg-stone-300 hover:bg-blue-600 hover:rounded-xl transition-all duration-300 ease-linear;
+    }
+}

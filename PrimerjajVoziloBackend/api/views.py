@@ -25,6 +25,39 @@ class VehicleList(generics.ListAPIView):
         return Vehicle.objects.filter(user=user)
 
 
+# Used to retrieve vehicle by url or id. It will also check if model stored is older than predifined value. If it is older, model will be first updated and than returned
+@api_view(["GET"])
+def get_vehicle(request):
+    # Get id to filter db
+    vehicle_id = request.GET.get("id", None)
+    vehicle_url = request.GET.get("url", None)
+
+    # Parameter validation
+    if not vehicle_url and not vehicle_id:
+        return Response({"error": "Ni parametrov"}, status=400)
+    try:
+        vehicle_id = int(vehicle_id)
+    except ValueError:
+        if not vehicle_url:
+            return Response({"error": "ID vozila ni stevilo"}, status=400)
+        else:
+            vehicle_id = None
+
+    vehicle_key = {"avtonet_id": vehicle_id} if vehicle_id else {"url": vehicle_url}
+
+    # Get vehicle object
+    try:
+        vehicle = Vehicle.objects.get(**vehicle_key)
+    # If vehicle is not found in db, use scraper to check on avto.net
+    except Vehicle.DoesNotExist:
+        return Response({"error": "Vozilo s parametri ne obstaja"})
+
+    # Serialize object and return it
+    serializer = VehicleSerializer(vehicle)
+
+    return Response(serializer.data)
+
+
 @api_view(["GET"])
 def update_model(request):
     # Check if url parameter was provided, else 400
