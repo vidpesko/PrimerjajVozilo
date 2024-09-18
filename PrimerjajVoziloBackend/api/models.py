@@ -1,7 +1,12 @@
 from django.db import models
 
 
-# Create your models here.
+VEHICLE_TYPES = {
+    "car": "Car",
+    "motorcycle": "Motorcycle"
+}
+
+
 class Vehicle(models.Model):
     avtonet_id = models.IntegerField(unique=True)
     user = models.ManyToManyField("auth.user", related_name="vehicles")
@@ -11,5 +16,15 @@ class Vehicle(models.Model):
 
     # Vehicle info
     url = models.URLField(max_length=500)
-    name = models.CharField(max_length=500)
-    price = models.IntegerField()
+    vehicleType = models.CharField(max_length=50, choices=VEHICLE_TYPES, null=True, default=None)
+    images = models.JSONField(default=list)
+
+    name = models.CharField(max_length=500, null=True, default=None)
+    price = models.CharField(max_length=50, null=True, default=None)
+    mileage = models.CharField(max_length=50, null=True, default=None)
+    engine = models.CharField(max_length=100, null=True, default=None)
+    firstRegistration = models.CharField(max_length=20, null=True, default=None)
+    location = models.CharField(max_length=100, null=True, default=None)
+    phoneNumber = models.CharField(max_length=20, null=True, default=None)
+
+    other = models.JSONField(null=True, default=None)

@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view
 
 from api.models import Vehicle
 from api.serializers import VehicleSerializer
-from Scraper.scraper import scrape_url, run_until_complete
+from Scraper.scraper import AvtonetScraper
 
 
 class VehicleList(generics.ListAPIView):
@@ -32,16 +32,20 @@ def get_vehicle(request):
     vehicle_id = request.GET.get("id", None)
     vehicle_url = request.GET.get("url", None)
 
+    serializer = None
+
     # Parameter validation
     if not vehicle_url and not vehicle_id:
         return Response({"error": "Ni parametrov"}, status=400)
-    try:
-        vehicle_id = int(vehicle_id)
-    except ValueError:
-        if not vehicle_url:
-            return Response({"error": "ID vozila ni stevilo"}, status=400)
-        else:
-            vehicle_id = None
+
+    if not vehicle_url:
+        try:
+            vehicle_id = int(vehicle_id)
+        except ValueError:
+            if not vehicle_url:
+                return Response({"error": "ID vozila ni stevilo"}, status=400)
+            else:
+                vehicle_id = None
 
     vehicle_key = {"avtonet_id": vehicle_id} if vehicle_id else {"url": vehicle_url}
 
@@ -50,10 +54,21 @@ def get_vehicle(request):
         vehicle = Vehicle.objects.get(**vehicle_key)
     # If vehicle is not found in db, use scraper to check on avto.net
     except Vehicle.DoesNotExist:
-        return Response({"error": "Vozilo s parametri ne obstaja"})
+        # Try to scrape vehicle from website
+        scraper = AvtonetScraper()
+        data = scraper.get_vehicle(vehicle_url)
+        # If error in the Scraper occurred
+        if data.get("error"):
+            return Response(data)
+
+        # Save vehicle to db
+        serializer = VehicleSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({"error": "Serializer error"})
+        vehicle = serializer.save()
 
     # Serialize object and return it
-    serializer = VehicleSerializer(vehicle)
+    serializer = VehicleSerializer(vehicle) if not serializer else serializer
 
     return Response(serializer.data)
 
@@ -75,7 +90,7 @@ def update_model(request):
         )
 
     # try:
-    vehicle_data = run_until_complete(scrape_url, vehicle_url)
+    vehicle_data = AvtonetScraper()
     # except Exception as e:
     #     return Response({"error": "Prislo je do napake!"}, status=400)
 

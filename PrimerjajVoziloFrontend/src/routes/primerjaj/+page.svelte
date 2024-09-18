@@ -17,7 +17,7 @@
     }
 </script>
 
-<div class="flex justify-center items-center gap-x-3 h-full bg-stone-100 overflow-x-scroll">
+<div class="flex justify-center items-center gap-x-3 h-full bg-stone-100 overflow-auto">
     {#each $vehiclesStore as vehicle}
     <VehicleCard {vehicle} />
     {/each}

@@ -1,68 +1,98 @@
-from urllib.parse import urlparse, parse_qs
-
 import nodriver as uc
 from bs4 import BeautifulSoup
 
 from . import parsers
-from .schemas import Vehicle
+from .utils import extract_url_param
+from .interfaces import CarInterface, MotorcycleInterface
+# import parsers
+# from interfaces import CarInterface, MotorcycleInterface
 
 
-def extract_url_param(url: str, param_key: str):
-    parsed_url = urlparse(url)
-    params = parse_qs(parsed_url.query)
-    return params.get(param_key, [None])[0]
+class AvtonetScraper:
+    def __init__(self) -> None:
+        pass
 
+    async def _get_html_async(self, url):
+        # Navigate to url and get html content
+        browser = await uc.start(
+            headless=True,
+        )
 
-def get_id(url: str) -> int | None:
-    return extract_url_param(url, "id")
+        page = await browser.get(url)
+        html = await page.get_content()
+        await page.close()
 
+        return BeautifulSoup(html, "lxml")
 
-def extract_html_data(html: str, vehicle: Vehicle, url: str) -> Vehicle:
-    soup = BeautifulSoup(html, 'lxml')
+    def get_html(self, url: str) -> BeautifulSoup:
+        return uc.loop().run_until_complete(self._get_html_async(url))
 
-    # Get name
-    vehicle.name = extract_url_param(url, "display")
+    def determine_vehicle_type(self, soup: BeautifulSoup):
+        element = soup.find("i", {"class": "flaticon-029-time"})
+        return "car" if element else "motorcycle"
 
-    # Get price
-    vehicle.price = parsers.price_parser(
-        soup.find("p", {"class": "h2 font-weight-bold align-middle py-4 mb-0"}).string
-    )
+    def check_vehicle_availabilitiy(self, soup):
+        container = soup.find("div", {"class": "col-12 h3 mt-5 mb-5 text-center"})
+        if not container:
+            return True, ""
 
-    return vehicle
+        texts = list(container.stripped_strings)
+        if "ni več aktualna" in texts[0]:
+            text = " ".join(texts)
+            text = text.replace("\n", "")
+            return False, text
+        return True, ""
 
+    def get_vehicle(self, url: str=None, id: int=None):
+        if not url and not id:
+            return {
+                "error": "Specify identifier"
+            }
+        if not url:
+            url = f"https://www.avto.net/Ads/details.asp?id={id}"
 
-async def scrape_url(url: str) -> Vehicle:
-    # NAvigate to url and get html content
-    browser = await uc.start(
-        headless=True,
-    )
+        # Get html, make the soup
+        soup = self.get_html(url)
 
-    page = await browser.get(url)
+        # Check if vehicle is still available
+        is_available, status = self.check_vehicle_availabilitiy(soup)
 
-    html = await page.get_content()
+        if not is_available:
+            return {
+                "response": "Vehicle is no longer available",
+            }
 
-    if not html:
-        return {"error": "Website with this url is empty"}
+        # Determine vehicle type (car/motorcycle)
+        vehicle_type = self.determine_vehicle_type(soup)
 
-    await page.close()
+        if vehicle_type == "car":
+            data = CarInterface(soup).get_data()
+            data["vehicleType"] = "car"
+        elif vehicle_type == "motorcycle":
+            data = MotorcycleInterface(soup).get_data()
+        else:
+            data = {}
 
-    # Extract id from url
-    avtonet_id = get_id(url)
+        # Add id, url,...
+        vehicle_id = extract_url_param(url, "id")
+        if not vehicle_id:
+            vehicle_id = extract_url_param(url, "ID")
+        try:
+            data["id"] = int(vehicle_id)
+        except ValueError:
+            data["id"] = None
+        data["url"] = url
 
-    # Extract data and load it into pydantic model
-    vehicle = Vehicle(url=url, avtonet_id=avtonet_id)
-    vehicle = extract_html_data(html, vehicle, url)
-
-    # Return dict of all data
-    return vehicle
-
-
-def run_until_complete(task, url):
-    return uc.loop().run_until_complete(scrape_url(url))
+        return data
 
 
 if __name__ == "__main__":
-    url = "https://www.avto.net/Ads/details.asp?id=19867197&display=Honda%20CB500FA%20CB%20500%20A2%20IZPIT"
+    # url = "https://www.avto.net/Ads/details.asp?id=20032741&display=Suzuki%20Gsxr%201000"
+    url = "https://www.avto.net/Ads/details.asp?id=20032640&display=Audi%20A4%20Avant"
+    # url = "https://www.avto.net/Ads/details.asp?id=20036370&display=Seat%20Leon"  # Already sold
 
-    vehicle_data = uc.loop().run_until_complete(scrape_url(url))
-    print(vehicle_data)
+    # vehicle_data = uc.loop().run_until_complete(scrape_url(url))
+    # print(vehicle_data)
+    scraper = AvtonetScraper()
+    data = scraper.get_vehicle(url)
+    print(data)
