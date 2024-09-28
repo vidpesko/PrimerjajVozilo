@@ -56,7 +56,10 @@ def get_vehicle(request):
     except Vehicle.DoesNotExist:
         # Try to scrape vehicle from website
         scraper = AvtonetScraper()
+        if not vehicle_url:
+            vehicle_url = f"https://avto.net/Ads/details.asp?id={vehicle_id}"
         data = scraper.get_vehicle(vehicle_url)
+
         # If error in the Scraper occurred
         if data.get("error"):
             return Response(data)

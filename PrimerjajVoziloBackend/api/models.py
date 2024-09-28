@@ -9,7 +9,7 @@ VEHICLE_TYPES = {
 
 class Vehicle(models.Model):
     avtonet_id = models.IntegerField(unique=True)
-    user = models.ManyToManyField("auth.user", related_name="vehicles")
+    # user = models.ManyToManyField("auth.user", related_name="vehicles")
 
     created = models.DateTimeField(auto_now_add=True)  # When was model created / first scraped
     updated = models.DateTimeField(auto_now=True)  # When was model last updated / scraped
@@ -22,8 +22,9 @@ class Vehicle(models.Model):
     name = models.CharField(max_length=500, null=True, default=None)
     price = models.CharField(max_length=50, null=True, default=None)
     mileage = models.CharField(max_length=50, null=True, default=None)
-    engine = models.CharField(max_length=100, null=True, default=None)
+    power = models.CharField(max_length=100, null=True, default=None)
     firstRegistration = models.CharField(max_length=20, null=True, default=None)
+    description = models.TextField(null=True, default=None)
     location = models.CharField(max_length=100, null=True, default=None)
     phoneNumber = models.CharField(max_length=20, null=True, default=None)
 

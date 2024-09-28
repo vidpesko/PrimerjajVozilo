@@ -14,7 +14,7 @@ export const actions = {
     dodaj: async ({ cookies, request }) => {
         const data = await request.formData();
         const inputUrl = data.get("url");
-
+        
         // Validation
         let error = null;
         if (!inputUrl) {
@@ -28,7 +28,7 @@ export const actions = {
                 error
             });
         }
-
+        
         // Call API
         const response = await getVehicle(inputUrl);
         
@@ -42,5 +42,11 @@ export const actions = {
 
         // Return response
         return response.vehicle
+    },
+    odstrani: async ({ request }) => {
+        const data = await request.formData();
+        const vehicle = data.get("vehicle");
+
+        
     }
 };

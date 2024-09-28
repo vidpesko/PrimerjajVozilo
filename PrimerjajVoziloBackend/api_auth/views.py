@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
 
 from api_auth.serializers import UserSerializer
 
@@ -56,3 +57,11 @@ class UserList(generics.ListAPIView):
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        auth_header = self.request.headers.get("Authorization")
+        token = auth_header.split()[1]
+        user_id = get_object_or_404(Token, key=token).user_id
+        user = get_object_or_404(User, id=user_id)
+        return user

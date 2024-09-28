@@ -6,18 +6,13 @@ class Interface:
     def __init__(self, soup) -> None:
         self.soup = soup
 
-        self.plan = None
-
-    def get_data(self) -> dict:
-        if not self.plan:
-            return "'plan' attr not set"
-
+    def get_data(self, plan) -> dict:
         data = {}
 
-        for override_func in self.plan["overrides"]:
+        for override_func in plan["overrides"]:
             data.update(override_func(self.soup))
 
-        for key, value in self.plan["elements"].items():
+        for key, value in plan["elements"].items():
             if value.get("override", False):
                 try:
                     data[key] = value["override"](self.soup)
@@ -32,14 +27,3 @@ class Interface:
                     data[key] = None
 
         return data
-
-
-class CarInterface(Interface):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.plan = CAR_EXTRACTION_PLAN
-
-
-class MotorcycleInterface(Interface):
-    pass

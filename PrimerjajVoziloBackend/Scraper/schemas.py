@@ -29,8 +29,9 @@ def get_description(soup: BeautifulSoup) -> str:
     # Structure text
     desc = desc.replace('<div class="col-12 p-0 font-weight-normal overflow-hidden" id="StareOpombe">', "")
     desc = desc.replace("</div>", "")
-    desc = desc.replace("<br/>", "\n")
-    desc = re.sub(r'\n\s*\n+', '\n', desc)
+    # desc = desc.replace("<br/>", "\n")
+    desc = re.sub(r'<br/>\s*<br/>+', '<br/>', desc)
+    # desc = desc.replace("/n", "<br/>")
     desc = remove_repeated_spaces(desc)
     return desc
 
@@ -42,14 +43,13 @@ def get_name(soup: BeautifulSoup) -> str:
         },
     ).div.div.h3
 
-    name = "".join(list(element.stripped_strings))
+    name = " ".join(list(element.stripped_strings))
     return remove_repeated_spaces(name)
 
 HEADER_NAMES_MAP = {
     "Prva registracija": "firstRegistration",
     "Prevoženi km": "mileage",
     "Lastnikov": "numOfOwners",
-    "Motor": "engine",
     "Kraj ogleda": "location",
     "Moč motorja": "power",
 }
@@ -77,13 +77,24 @@ def get_table_properties(soup: BeautifulSoup) -> dict:
             if not header:
                 continue
             header = str(header)
-            value = str(row.td.string)
+            if not list(row.td.stripped_strings):
+                continue
+            value = str(list(row.td.stripped_strings)[0])
             value = " ".join(value.split())
 
             if value == "":
                 continue
 
             new_header = HEADER_NAMES_MAP.get(header[:-1], header[:-1])
+            if new_header == "Motor":
+                if value[-2:] == "kw":
+                    engine_power = value
+                else:
+                    try:
+                        engine_power = value.split(",")[0]
+                    except IndexError:
+                        engine_power = value
+                data["power"] = engine_power
             if not new_header:
                 continue
             data[new_header] = value
@@ -99,6 +110,10 @@ CAR_EXTRACTION_PLAN = {
         },
         "images": {"override": get_images},
         "description": {"override": get_description},
-        "name": {"override": get_name}
+        "name": {"override": get_name},
+        "phoneNumber": {
+            "tag": "p",
+            "identifiers": {"class": "h3 font-weight-bold m-0"},
+        },
     },
 }

@@ -12,11 +12,12 @@ VEHICLE_RESPONSE_SCHEMA = {
         "name": None,
         "images": [],
         "mileage": None,  # 0 mileage means new car, None means unkown
-        "engine": None,
+        "power": None,
         "firstRegistration": None,
         "price": None,  # If None, price is set to "Poklicite za ceno!"
         "location": None,
         "phoneNumber": None,
+        "description": None,
     },
     "other": None,
     "metadata": {"url": None, "updated": None, "vehicleType": None, "seller": None, "status": None},
@@ -44,8 +45,6 @@ def generate_response_with_schema(data: dict):
 
 
 class VehicleSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all())
-
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
@@ -62,12 +61,13 @@ class VehicleSerializer(serializers.ModelSerializer):
         del data["url"]
         del data["id"]
 
-        for key in VEHICLE_RESPONSE_SCHEMA["required"].keys():
-            if not key in data:
-                continue
-            value = data.get(key)
-            response[key] = value
-            del data[key]
+        for keyword in ["required", "metadata"]:
+            for key in VEHICLE_RESPONSE_SCHEMA[keyword].keys():
+                if not key in data:
+                    continue
+                value = data.get(key)
+                response[key] = value
+                del data[key]
 
         response["other"] = {}
         for key, value in data.items():
@@ -83,11 +83,11 @@ class VehicleSerializer(serializers.ModelSerializer):
             "name",
             "images",
             "url",
-            "user",
             "mileage",
-            "engine",
+            "power",
             "firstRegistration",
             "price",
+            "description",
             "location",
             "phoneNumber",
             "vehicleType",

@@ -1,9 +1,12 @@
+import sys
+
 import nodriver as uc
 from bs4 import BeautifulSoup
 
 from . import parsers
 from .utils import extract_url_param
-from .interfaces import CarInterface, MotorcycleInterface
+from .interfaces import Interface
+from .schemas import CAR_EXTRACTION_PLAN
 # import parsers
 # from interfaces import CarInterface, MotorcycleInterface
 
@@ -59,17 +62,25 @@ class AvtonetScraper:
 
         if not is_available:
             return {
-                "response": "Vehicle is no longer available",
+                "error": "Vehicle is no longer available",
             }
 
         # Determine vehicle type (car/motorcycle)
         vehicle_type = self.determine_vehicle_type(soup)
 
+        data = {}
+
         if vehicle_type == "car":
-            data = CarInterface(soup).get_data()
+            interface = Interface(soup)
+            data = interface.get_data(CAR_EXTRACTION_PLAN)
+            if data.get("error"):
+                return data
+
             data["vehicleType"] = "car"
         elif vehicle_type == "motorcycle":
-            data = MotorcycleInterface(soup).get_data()
+            print("EHRHERHEHRHE")
+            # data = Interface(soup).get(soup).get_data()
+            return {"error": "Can't scrape motorcycles yet"}
         else:
             data = {}
 

@@ -10,7 +10,7 @@ urlpatterns = [
 
     # List users & get user detail
     path("users/", UserList.as_view()),
-    path("users/<int:pk>/", UserDetail.as_view()),
+    path("user/", UserDetail.as_view()),
     # Login & register
     path("get-token/", views.obtain_auth_token),
     path("register/", UserRegistrationView.as_view()),

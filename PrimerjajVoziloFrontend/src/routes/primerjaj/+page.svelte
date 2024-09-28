@@ -17,10 +17,13 @@
     }
 </script>
 
-<div class="flex justify-center items-center gap-x-3 h-full bg-stone-100 overflow-auto">
-    {#each $vehiclesStore as vehicle}
-    <VehicleCard {vehicle} />
-    {/each}
+<div class:justify-center={$vehiclesStore.length === 0} class="flex items-center gap-x-3 h-full px-4 bg-green-500 dark:bg-stone-600 overflow-x-auto">
 
+    <div class="flex justify-start items-center gap-x-2 shrink-0">
+        {#each $vehiclesStore as vehicle}
+        <VehicleCard {vehicle} />
+        {/each}
+    </div>
+    
     <AddVehicleBtn form={form} showInput={showInput} />
 </div>
