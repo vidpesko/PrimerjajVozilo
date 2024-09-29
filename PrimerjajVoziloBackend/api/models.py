@@ -6,6 +6,11 @@ VEHICLE_TYPES = {
     "motorcycle": "Motorcycle"
 }
 
+SELLER_TYPES = {
+    "company": "Company",
+    "person": "Person"
+}
+
 
 class Vehicle(models.Model):
     avtonet_id = models.IntegerField(unique=True)
@@ -18,6 +23,7 @@ class Vehicle(models.Model):
     url = models.URLField(max_length=500)
     vehicleType = models.CharField(max_length=50, choices=VEHICLE_TYPES, null=True, default=None)
     images = models.JSONField(default=list)
+    seller = models.CharField(max_length=10, choices=SELLER_TYPES, null=True, default=None)
 
     name = models.CharField(max_length=500, null=True, default=None)
     price = models.CharField(max_length=50, null=True, default=None)

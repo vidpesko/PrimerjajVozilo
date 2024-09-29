@@ -3,7 +3,9 @@ import re
 from bs4 import BeautifulSoup, Tag
 
 from .utils import remove_repeated_spaces
+
 # from utils import remove_repeated_spaces
+
 
 # Override functions
 def get_images(soup: BeautifulSoup) -> list:
@@ -23,17 +25,22 @@ def get_images(soup: BeautifulSoup) -> list:
 
     return images
 
+
 def get_description(soup: BeautifulSoup) -> str:
     element = soup.find("div", id="StareOpombe")
     desc = str(element)
     # Structure text
-    desc = desc.replace('<div class="col-12 p-0 font-weight-normal overflow-hidden" id="StareOpombe">', "")
+    desc = desc.replace(
+        '<div class="col-12 p-0 font-weight-normal overflow-hidden" id="StareOpombe">',
+        "",
+    )
     desc = desc.replace("</div>", "")
     # desc = desc.replace("<br/>", "\n")
-    desc = re.sub(r'<br/>\s*<br/>+', '<br/>', desc)
+    desc = re.sub(r"<br/>\s*<br/>+", "<br/>", desc)
     # desc = desc.replace("/n", "<br/>")
     desc = remove_repeated_spaces(desc)
     return desc
+
 
 def get_name(soup: BeautifulSoup) -> str:
     element = soup.find(
@@ -46,6 +53,16 @@ def get_name(soup: BeautifulSoup) -> str:
     name = " ".join(list(element.stripped_strings))
     return remove_repeated_spaces(name)
 
+
+def get_seller_type(soup: BeautifulSoup) -> str:
+    try:
+        phone_num = soup.find("p", {"class": "h3 font-weight-bold m-0"})
+    except Exception:
+        phone_num = None
+
+    return "person" if phone_num else "company"
+
+
 HEADER_NAMES_MAP = {
     "Prva registracija": "firstRegistration",
     "Prevoženi km": "mileage",
@@ -54,18 +71,6 @@ HEADER_NAMES_MAP = {
     "Moč motorja": "power",
 }
 
-def get_big_data(soup) -> dict:
-    container = soup.find("div", {"class": "col-12 bg-white mb-3 p-0 px-2 GO-Rounded GO-Shadow-B"})
-    data = {}
-    if not container:
-        return data
-    boxes = container.find_all("div", {"class": "col-6"})
-    for box in boxes:
-        text = list(box.stripped_strings)
-        box_description = HEADER_NAMES_MAP.get(text[0], text[0])
-        box_value = "".join(text[1:])
-        data[box_description] = box_value
-    return data
 
 def get_table_properties(soup: BeautifulSoup) -> dict:
     data = {}
@@ -95,6 +100,13 @@ def get_table_properties(soup: BeautifulSoup) -> dict:
                     except IndexError:
                         engine_power = value
                 data["power"] = engine_power
+            # If location is not specified (in case of company seller), do not put "," as location
+            elif (new_header == "location") and (value == ","):
+                try:
+                    el = soup.find("a", {"data-target": "#MapModal"})
+                    value = "".join(list(el.stripped_strings))
+                except Exception:
+                    value = None
             if not new_header:
                 continue
             data[new_header] = value
@@ -106,14 +118,28 @@ CAR_EXTRACTION_PLAN = {
     "elements": {
         "price": {
             "tag": "p",
-            "identifiers": {"class": "h2 font-weight-bold align-middle py-4 mb-0"},
+            "identifiers": [
+                {"class": "h2 font-weight-bold align-middle py-4 mb-0"},
+                {"class": "h2 font-weight-bold text-danger mb-3"},
+            ],
         },
         "images": {"override": get_images},
         "description": {"override": get_description},
         "name": {"override": get_name},
         "phoneNumber": {
             "tag": "p",
-            "identifiers": {"class": "h3 font-weight-bold m-0"},
+            "identifiers": [
+                {"class": "h3 font-weight-bold m-0"},
+            ],
         },
+        "Stara cena": {
+            "tag": "p",
+            "identifiers": [
+                {
+                    "class": "h2 GO-OglasDataStaraCena GO-grayX11 font-weight-bold mb-0 mt-2"
+                },
+            ],
+        },
+        "seller": {"override": get_seller_type},
     },
 }

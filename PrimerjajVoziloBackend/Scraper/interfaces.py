@@ -19,11 +19,15 @@ class Interface:
                 except Exception:
                     data[key] = None
             else:
-                try:
-                    element = self.soup.find(value["tag"], value["identifiers"])
-                    element_value = "".join(list(element.stripped_strings))
-                    data[key] = element_value
-                except Exception:
-                    data[key] = None
+                for identifier in value["identifiers"]:
+                    try:
+                        element = self.soup.find(value["tag"], identifier)
+                        element_value = "".join(list(element.stripped_strings))
+                        data[key] = element_value
+                    except Exception:
+                        data[key] = None
+                    finally:
+                        if data[key]:
+                            break
 
         return data

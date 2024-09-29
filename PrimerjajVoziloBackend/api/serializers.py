@@ -45,13 +45,14 @@ def generate_response_with_schema(data: dict):
 
 
 class VehicleSerializer(serializers.ModelSerializer):
+    # Called when transforming Model object to json representation
     def to_representation(self, instance):
         data = super().to_representation(instance)
-
         # Generate response using VEHICLE_RESPONSE_SCHEMA
         data = generate_response_with_schema(data)
         return data
 
+    # Called when transforming JSON representation to Model object
     def to_internal_value(self, data):
         response = {
             "avtonet_id": data["id"],
@@ -80,6 +81,7 @@ class VehicleSerializer(serializers.ModelSerializer):
         fields = [
             "avtonet_id",
             "updated",
+            "seller",
             "name",
             "images",
             "url",
