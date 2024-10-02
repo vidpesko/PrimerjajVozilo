@@ -68,7 +68,7 @@ def get_vehicle(request):
         serializer = VehicleSerializer(data=data)
         if not serializer.is_valid():
             return Response({"error": "Serializer error"})
-        # vehicle = serializer.save()
+        vehicle = serializer.save()
 
     # Serialize object and return it
     serializer = VehicleSerializer(vehicle) if not serializer else serializer
