@@ -54,6 +54,19 @@ def get_name(soup: BeautifulSoup) -> str:
     return remove_repeated_spaces(name)
 
 
+def get_neto_price(soup: BeautifulSoup) -> str:
+    element = soup.find(
+        "p",
+        {
+            "class": "h5 font-weight-bold text-muted"
+        }
+    ).stripped_strings
+
+    value = "".join(list(element))
+    value = value.replace("oz. ", "")
+    return value
+
+
 def get_seller_type(soup: BeautifulSoup) -> str:
     try:
         phone_num = soup.find("p", {"class": "h3 font-weight-bold m-0"})
@@ -63,7 +76,7 @@ def get_seller_type(soup: BeautifulSoup) -> str:
     return "person" if phone_num else "company"
 
 
-HEADER_NAMES_MAP = {
+CAR_HEADER_NAMES_MAP = {
     "Prva registracija": "firstRegistration",
     "Prevoženi km": "mileage",
     "Lastnikov": "numOfOwners",
@@ -72,7 +85,7 @@ HEADER_NAMES_MAP = {
 }
 
 
-def get_table_properties(soup: BeautifulSoup) -> dict:
+def get_table_properties(soup: BeautifulSoup, headers_names_map: dict, validation_func):
     data = {}
     container = soup.find("table", {"class": "table table-sm"}).tbody
 
@@ -82,39 +95,55 @@ def get_table_properties(soup: BeautifulSoup) -> dict:
             if not header:
                 continue
             header = str(header)
+
             if not list(row.td.stripped_strings):
                 continue
-            value = str(list(row.td.stripped_strings)[0])
-            value = " ".join(value.split())
 
-            if value == "":
+            # Strip value
+            value = str(list(row.td.stripped_strings)[0])
+            value = remove_repeated_spaces(value)
+            if not value:
                 continue
 
-            new_header = HEADER_NAMES_MAP.get(header[:-1], header[:-1])
-            if new_header == "Motor":
-                if value[-2:] == "kw":
-                    engine_power = value
-                else:
-                    try:
-                        engine_power = value.split(",")[0]
-                    except IndexError:
-                        engine_power = value
-                data["power"] = engine_power
-            # If location is not specified (in case of company seller), do not put "," as location
-            elif (new_header == "location") and (value == ","):
-                try:
-                    el = soup.find("a", {"data-target": "#MapModal"})
-                    value = "".join(list(el.stripped_strings))
-                except Exception:
-                    value = None
+            new_header = headers_names_map.get(header[:-1], header[:-1])
+
+            # Vehicle specific validations / modifications: function takes current header and value as parameters. It then modifies value (if needed) and returns value.
+            # It also accepts data dictionary, and modifies it, if needed
+            value = validation_func(data, new_header, value)
+            
             if not new_header:
                 continue
             data[new_header] = value
     return data
 
 
-CAR_EXTRACTION_PLAN = {
-    "overrides": [get_table_properties],
+def get_car_table_properties(soup: BeautifulSoup) -> dict:
+    def validation(data: dict, header: str, value: str) -> str:
+        if header == "Motor":
+            if value[-2:] == "kw":
+                engine_power = value
+            else:
+                try:
+                    engine_power = value.split(",")[0]
+                except IndexError:
+                    engine_power = value
+            engine_power = engine_power.replace("\n", "")
+            data["power"] = engine_power
+        # If location is not specified (in case of company seller), do not put "," as location
+        elif (header == "location") and (value == ","):
+            try:
+                el = soup.find("a", {"data-target": "#MapModal"})
+                value = "".join(list(el.stripped_strings))
+            except Exception:
+                value = None
+        return value
+
+    return get_table_properties(soup, CAR_HEADER_NAMES_MAP, validation)
+
+
+# Common extraction plan, shared on all vehicles
+EXTRACTION_PLAN = {
+    "overrides": [],
     "elements": {
         "price": {
             "tag": "p",
@@ -140,6 +169,20 @@ CAR_EXTRACTION_PLAN = {
                 },
             ],
         },
+        "Neto cena": {"override": get_neto_price},
         "seller": {"override": get_seller_type},
     },
+}
+
+
+# Vehicle specific plans
+CAR_EXTRACTION_PLAN = {
+    **EXTRACTION_PLAN,
+    "overrides": [get_car_table_properties]
+}
+
+
+MOTORCYCLE_EXTRACTION_PLAN = {
+    **EXTRACTION_PLAN,
+    "overrides": [get_car_table_properties]
 }

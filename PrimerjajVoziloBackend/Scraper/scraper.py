@@ -18,12 +18,12 @@ class AvtonetScraper:
     async def _get_html_async(self, url):
         # Navigate to url and get html content
         browser = await uc.start(
-            headless=True,
+            # headless=True,
         )
 
         page = await browser.get(url)
         html = await page.get_content()
-        await page.close()
+        # await page.close()
 
         return BeautifulSoup(html, "lxml")
 
@@ -78,9 +78,10 @@ class AvtonetScraper:
 
             data["vehicleType"] = "car"
         elif vehicle_type == "motorcycle":
-            print("EHRHERHEHRHE")
-            # data = Interface(soup).get(soup).get_data()
-            return {"error": "Can't scrape motorcycles yet"}
+            interface = Interface(soup)
+            data = interface.get_data(CAR_EXTRACTION_PLAN)
+            if data.get("error"):
+                return data
         else:
             data = {}
 
