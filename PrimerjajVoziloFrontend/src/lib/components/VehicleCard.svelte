@@ -16,6 +16,8 @@
     // Components
     import VehicleCardProperty from './VehicleCardProperty.svelte';
     import { enhance } from '$app/forms';
+    // .env values
+    import { PUBLIC_GOOGLE_MAPS_API_KEY } from '$env/static/public';
 
     import { vehiclesStore } from '../api/client.js';
 
@@ -144,7 +146,7 @@
             loading="lazy"
             allowfullscreen
             referrerpolicy="no-referrer-when-downgrade"
-            src="https://www.google.com/maps/embed/v1/place?key=AIzaSyDX2EJTpEufxCZJxjRKOOsVeeJS5FdkXY4
+            src="https://www.google.com/maps/embed/v1/place?key={PUBLIC_GOOGLE_MAPS_API_KEY}
             &q={location}&zoom=9">
         </iframe>
     </div>
